@@ -75,17 +75,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the dashboard.
 
-### Redis (optional)
-
-Redis backs the `/api/market/ticker` cache when `REDIS_URL` is set:
-
-```bash
-docker compose up -d
-```
-
-Copy `.env.example` to `.env.local` and set `REDIS_URL=redis://localhost:6379`. Without Redis, the ticker API still works but skips caching.
-
-Check connectivity with `GET /api/health` — it reports Redis configuration and ping latency when available.
+Check the app is up with `GET /api/health`.
 
 ## Customization
 
