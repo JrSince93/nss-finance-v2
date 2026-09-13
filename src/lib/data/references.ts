@@ -10,9 +10,10 @@
  * `getNextRef` in the production app, with two behaviour changes that are
  * deliberate — see `nextSequence` and `buildPrefixMap` below.
  *
- * Pure: no Supabase, no React. The allocator that actually claims a reference
- * at insert time lives in `reference-allocator.ts`, which has to touch the
- * database to be race-safe.
+ * Pure: no Supabase, no React. `reference-allocator.ts` was meant to make
+ * claiming a reference race-safe at insert time, but the database index it
+ * depended on can't exist, so it is dead code and the concurrent-save race is
+ * still open — see that file's header.
  */
 
 /**

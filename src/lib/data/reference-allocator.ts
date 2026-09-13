@@ -1,38 +1,49 @@
 import { formatReference, nextSequence } from "@/lib/data/references"
 
 /**
- * Claiming a transaction reference without two people getting the same one.
+ * Claiming a transaction reference, retrying on a duplicate-key error.
  *
- * ## The bug this exists to fix
+ * ## Status: dead code, kept for the reasoning
  *
- * The production app builds a reference by reading the cash book and adding one
- * (`getNextRef`). Two people adding a transaction at the same moment both read
- * the same cash book, both compute `NDIS-006`, and both insert it. Nothing
- * rejects the second one, so the ledger quietly ends up with two rows sharing a
- * reference — and a reference is how invoice payments are attributed back to
- * budget lines (`attributeReceiptsToLines` matches on it), so a duplicate is
- * not cosmetic.
+ * Nothing imports this module, and as things stand the retry in it can never
+ * do anything. It was written as one half of a two-part fix, and the other half
+ * will never exist:
  *
- * ## Why the fix has to be half in the database
+ *   * The plan was a unique index on `transactions.reference`
+ *     (`migrations/2026-09-13-transaction-reference-unique.sql`), which would
+ *     have turned a lost race into Postgres error 23505 for this code to catch
+ *     and retry.
+ *   * **That index can't be built, and won't be.** The production app's
+ *     `saveTx` deliberately writes every row of a recurring series with the
+ *     same reference — a 12-month recurring entry is 13 rows sharing one. So
+ *     duplicate references are legitimate data. No series happens to exist in
+ *     live data yet (checked 2026-09-14), so the index would build today, then
+ *     every later recurring add would fail.
  *
- * No amount of application code can close this on its own. Two server instances
- * cannot see each other's in-flight inserts, so *any* read-then-write scheme
- * has a window. The only thing that can arbitrate is the database.
+ * With no index, no insert ever fails on a reference collision, so
+ * `isUniqueViolation` never matches one and `claimReference` always succeeds on
+ * its first attempt with whatever number it computed. It's a plain
+ * read-then-write with extra steps. Don't wire it into an insert believing it
+ * adds safety.
  *
- * So the fix is two halves:
+ * ## What is fixed, and what isn't
  *
- *   1. **A unique index on `transactions.reference`** — see
- *      `migrations/2026-09-13-transaction-reference-unique.sql`. This is what
- *      actually makes a duplicate impossible. **It has not been run**, and it
- *      changes behaviour for the production app too, which shares this
- *      database. Read the migration's header before running it.
- *   2. **Retrying here when the database says no.** With the index in place a
- *      losing race surfaces as Postgres error 23505; we recompute from the new
- *      state and try again.
+ *   * **Fixed: deleted references being reused.** That fix is `nextSequence`
+ *     in `references.ts` — `MAX + 1` instead of `COUNT + 1` — not this file,
+ *     and it needs no database change.
+ *   * **Not fixed: two people saving at the same moment.** Both read the same
+ *     cash book, both compute the same next number, and both inserts succeed.
+ *     Application code can't close this, since two server instances can't see
+ *     each other's in-flight inserts, and the database-side fix is gone. This
+ *     is a genuine open gap rather than a cosmetic one: invoice payments are
+ *     attributed to budget lines by reference (`attributeReceiptsToLines`), so
+ *     a collision can misattribute money. It is open and undecided: nobody has
+ *     chosen either to accept the risk or to fix it.
  *
- * Without step 1 this still narrows the window and fixes the far more common
- * delete-and-reuse case (see `nextSequence`), but it does not close the race.
- * Don't describe it as fixed until the migration has run.
+ * Closing it would take a database arbiter that tolerates recurring series:
+ * either a partial unique index that excludes them (fragile — recurring rows
+ * are marked only by `[recurring]` in the description) or a real `series_id`
+ * column the index could be scoped by. Either is its own decision.
  */
 
 /** Postgres `unique_violation`. */
