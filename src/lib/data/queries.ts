@@ -5,6 +5,7 @@ import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import type {
   DropdownOptionRow,
+  EmployeeEditRow,
   EmployeeRow,
   InvoiceRow,
   ParticipantRow,
@@ -163,6 +164,41 @@ export const getInvoices = cache(async (): Promise<InvoiceRow[]> => {
       .order("invoice_date", { ascending: false }),
   )
 })
+
+/**
+ * Every column of one employee, for the edit form.
+ *
+ * Deliberately separate from `getEmployees`, which omits `tax_file_number`,
+ * `bank_account` and `abn` because no list screen needs them. This is the one
+ * place those three are read, for the one row being edited — so they reach a
+ * server render only when someone has actually opened that employee's form,
+ * rather than travelling with every employee on every page that lists them.
+ *
+ * Returns null when the row doesn't exist *or* RLS hides it — an office
+ * manager asking for one of the two payroll-restricted employees gets null
+ * here, exactly as if the id were made up. The caller must not distinguish the
+ * two cases to the user; doing so would confirm the row exists.
+ */
+export const getEmployeeForEdit = cache(
+  async (id: string): Promise<EmployeeEditRow | null> => {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from("employees")
+      .select(
+        "id, name, role, email, phone, employment_type, pay_type, pay_rate, start_date, active, super_fund, bank_bsb, sat_rate, sun_rate, ph_rate, sleepover_flat_rate, tax_file_number, bank_account, abn",
+      )
+      .eq("id", id)
+      .maybeSingle()
+
+    if (error) {
+      console.error("[nss] employee lookup failed:", error.message)
+      return null
+    }
+
+    return (data as EmployeeEditRow | null) ?? null
+  },
+)
 
 /**
  * The operator-managed dropdown values, oldest first.

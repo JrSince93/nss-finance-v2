@@ -1,3 +1,6 @@
+import Link from "next/link"
+import { ChevronRightIcon } from "lucide-react"
+
 import { formatAud, formatDate } from "@/lib/format"
 import type { EmployeeRow } from "@/lib/data/types"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +26,21 @@ function payRate(employee: EmployeeRow): string {
     : `${formatAud(employee.pay_rate)}/hr`
 }
 
-export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
+/**
+ * The employee list.
+ *
+ * Rows link into the edit form when the role may write. The link is on the name
+ * cell rather than the whole row so the text stays selectable and the target is
+ * a real anchor — middle-click and open-in-new-tab both work.
+ */
+export function EmployeeTable({
+  employees,
+  canWrite,
+}: {
+  employees: EmployeeRow[]
+  /** Server-checked as well; this only decides whether a link is drawn. */
+  canWrite: boolean
+}) {
   return (
     <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
       <div className="overflow-x-auto">
@@ -55,16 +72,33 @@ export function EmployeeTable({ employees }: { employees: EmployeeRow[] }) {
             {employees.map((employee) => (
               <TableRow key={employee.id}>
                 <TableCell>
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-medium">
-                      {employee.name || "Unnamed"}
-                    </span>
-                    {employee.email && (
-                      <span className="truncate text-xs text-muted-foreground">
-                        {employee.email}
+                  {canWrite ? (
+                    <Link
+                      href={`/employees/${employee.id}`}
+                      className="group flex min-w-0 flex-col"
+                    >
+                      <span className="flex items-center gap-1 truncate text-sm font-medium group-hover:underline">
+                        {employee.name || "Unnamed"}
+                        <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                       </span>
-                    )}
-                  </div>
+                      {employee.email && (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {employee.email}
+                        </span>
+                      )}
+                    </Link>
+                  ) : (
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-medium">
+                        {employee.name || "Unnamed"}
+                      </span>
+                      {employee.email && (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {employee.email}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </TableCell>
 
                 <TableCell className="hidden sm:table-cell">

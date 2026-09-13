@@ -53,6 +53,18 @@ export type EmployeeRow = {
 }
 
 /**
+ * One employee with the sensitive columns included, for the edit form only.
+ *
+ * `EmployeeRow` deliberately omits these three so they don't travel with every
+ * list render. Read this through `getEmployeeForEdit` and nowhere else.
+ */
+export type EmployeeEditRow = EmployeeRow & {
+  tax_file_number: string | null
+  bank_account: string | null
+  abn: string | null
+}
+
+/**
  * A fortnightly pay run.
  *
  * `employee_name` is denormalised at insert. Read it rather than embedding

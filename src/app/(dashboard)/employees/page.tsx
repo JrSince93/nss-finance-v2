@@ -16,8 +16,11 @@ import { requireStaff } from "@/lib/auth/dal"
  * page filters by role or counts on a fixed number of employees, so it reads
  * correctly with them missing.
  */
+/** Roles that may edit. Mirrors the check in the Server Action. */
+const CAN_WRITE: string[] = ["admin", "office_manager"]
+
 export default async function Page() {
-  await requireStaff("employees")
+  const staff = await requireStaff("employees")
   const employees = await getEmployees()
 
   const active = employees.filter((e) => e.active !== false).length
@@ -75,7 +78,10 @@ export default async function Page() {
         ))}
       </div>
 
-      <EmployeeTable employees={employees} />
+      <EmployeeTable
+        employees={employees}
+        canWrite={CAN_WRITE.includes(staff.role)}
+      />
     </div>
   )
 }
