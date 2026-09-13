@@ -1,0 +1,34 @@
+# Netlify configuration for the Next.js app.
+#
+# This is for a NEW Netlify site. It is deliberately nothing like the
+# production app's netlify.toml (which publishes a static `public/` directory
+# and a Wise function) — that site stays exactly as it is.
+#
+# Required environment variables on the Netlify site (Site configuration →
+# Environment variables), not in this file:
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+[build]
+  command = "pnpm build"
+  # The Next.js runtime reads the build output from .next and turns the server
+  # routes into functions. Do not point this at `out` — that's only correct
+  # for `output: 'export'`, which would drop proxy.ts (static export does not
+  # support it) and with it session refresh.
+  publish = ".next"
+
+[build.environment]
+  # Matches .github/workflows/ci.yml so CI and Netlify build identically.
+  NODE_VERSION = "20"
+  PNPM_VERSION = "10"
+
+[[plugins]]
+  # Netlify's Next.js runtime. Netlify installs this automatically for Next
+  # sites; pinning it here makes the dependency explicit.
+  package = "@netlify/plugin-nextjs"
+
+[[headers]]
+  # Private system, same intent as the production app's robots.txt.
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

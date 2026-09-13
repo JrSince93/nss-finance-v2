@@ -1,117 +1,113 @@
-import Image from "next/image"
+import Link from "next/link"
+import { ChevronRightIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { formatAud, formatDate } from "@/lib/format"
+import { isPayroll, type TransactionRow } from "@/lib/data/types"
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { recentTransactions } from "@/data/seed"
-import {
-  MoreHorizontalIcon,
-  ChevronRightIcon,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
+import { EmptyState } from "@/components/empty-state"
 
-const categoryColors: Record<string, string> = {
-  Entertainment: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
-  Technology: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
-  Income: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
-  Design: "bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-400",
-  "AI Tools": "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400",
-  Productivity: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-400",
-}
-
-export function RecentTransactions() {
+/**
+ * The most recent cash book entries.
+ *
+ * No merchant logos — the schema has no merchant, only a description typed by
+ * whoever entered the row — and money in and out stay in their own columns
+ * rather than collapsing to one signed amount.
+ */
+export function RecentTransactions({
+  transactions,
+}: {
+  transactions: TransactionRow[]
+}) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-base font-semibold">
-          Recent Transactions
+          Recent transactions
         </CardTitle>
-        <Button variant="outline" size="sm" className="h-8 gap-1 text-xs">
-          See All
+        {/*
+          A link, styled as a button — not a Button that navigates. Base UI's
+          Button asserts it renders a real <button> (`nativeButton` defaults to
+          true), and `nativeButton={false}` would silence that only by stamping
+          `role="button"` onto the anchor, which costs the link its semantics.
+          Applying `buttonVariants` to the Link keeps a genuine <a href>, so
+          cmd-click and open-in-new-tab still work.
+        */}
+        <Link
+          href="/cash-book"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "h-8 gap-1 text-xs",
+          )}
+        >
+          See all
           <ChevronRightIcon className="size-3" />
-        </Button>
+        </Link>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <div className="min-w-[600px] space-y-1">
-            {/* Header */}
-            <div className="grid grid-cols-[1fr_140px_100px_120px_32px] gap-4 border-b pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <span>Merchant</span>
-              <span className="hidden sm:inline">Transaction ID</span>
-              <span className="text-right">Amount</span>
-              <span className="hidden md:inline">Date</span>
-              <span />
-            </div>
+        {transactions.length === 0 ? (
+          <EmptyState
+            variant="transactions"
+            title="No transactions"
+            description="The cash book is empty for your role."
+            className="py-8"
+          />
+        ) : (
+          <ul className="divide-y">
+            {transactions.map((tx) => {
+              const amountIn = tx.amount_in ?? 0
+              const amountOut = tx.amount_out ?? 0
 
-            {/* Rows */}
-            {recentTransactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="group grid grid-cols-[1fr_140px_100px_120px_32px] items-center gap-4 rounded-lg py-2.5 transition-colors hover:bg-muted/50"
-              >
-                {/* Merchant */}
-                <div className="flex items-center gap-3">
-                  <Image
-                    src={tx.logo}
-                    alt={tx.merchant}
-                    width={36}
-                    height={36}
-                    className="size-9 shrink-0 rounded-lg object-contain"
-                    unoptimized
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{tx.merchant}</p>
-                    <Badge
-                      variant="secondary"
+              return (
+                <li
+                  key={tx.id}
+                  className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {tx.description || "(no description)"}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {isPayroll(tx) && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Payroll
+                        </Badge>
+                      )}
+                      <span className="truncate font-mono text-[10px] text-muted-foreground">
+                        {tx.reference || "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <p
                       className={cn(
-                        "mt-0.5 h-5 rounded-md px-1.5 text-[10px] font-medium",
-                        categoryColors[tx.category]
+                        "tabular-nums text-sm font-semibold",
+                        amountIn > 0 && "text-emerald-600 dark:text-emerald-400",
                       )}
                     >
-                      {tx.category}
-                    </Badge>
+                      {amountIn > 0
+                        ? `+${formatAud(amountIn)}`
+                        : amountOut > 0
+                          ? `−${formatAud(amountOut)}`
+                          : formatAud(0)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDate(tx.date)}
+                    </p>
                   </div>
-                </div>
-
-                {/* Transaction ID */}
-                <span className="hidden font-mono text-xs text-muted-foreground sm:inline">
-                  {tx.transactionId}
-                </span>
-
-                {/* Amount */}
-                <span
-                  className={cn(
-                    "text-right text-sm font-semibold tabular-nums",
-                    tx.amount > 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-foreground"
-                  )}
-                >
-                  {tx.amount > 0 ? "+" : ""}$
-                  {Math.abs(tx.amount).toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                  })}
-                </span>
-
-                {/* Date */}
-                <span className="hidden text-xs text-muted-foreground md:inline">{tx.date}</span>
-
-                {/* Actions */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  <MoreHorizontalIcon className="size-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </CardContent>
     </Card>
   )

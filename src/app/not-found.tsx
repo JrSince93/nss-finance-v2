@@ -1,6 +1,8 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { LandmarkIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
 
 export default function NotFound() {
   return (
@@ -12,9 +14,10 @@ export default function NotFound() {
         <h1 className="text-4xl font-bold tabular-nums">404</h1>
         <p className="text-muted-foreground">This page doesn&apos;t exist.</p>
       </div>
-      <Button render={<Link href="/dashboard" />}>
+      {/* A styled link, not a Button — see the note in recent-transactions.tsx. */}
+      <Link href="/dashboard" className={cn(buttonVariants())}>
         Back to Dashboard
-      </Button>
+      </Link>
     </div>
   )
 }

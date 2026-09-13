@@ -1,18 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
+import { useActionState, useState } from "react"
 import Link from "next/link"
 import { motion } from "motion/react"
 import {
-  LandmarkIcon,
+  StarIcon,
   MailIcon,
   LockIcon,
   EyeIcon,
   EyeOffIcon,
   Loader2Icon,
-  CheckIcon,
   ShieldCheckIcon,
+  AlertCircleIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +21,8 @@ import {
   InputGroupButton,
 } from "@/components/ui/input-group"
 import dynamic from "next/dynamic"
+
+import { signIn, type SignInState } from "@/lib/auth/actions"
 
 const GlobeDemo = dynamic(() => import("@/components/globe-demo"), {
   ssr: false,
@@ -49,47 +50,38 @@ const itemVariants = {
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-      setIsSuccess(true)
-      setTimeout(() => setIsSuccess(false), 2000)
-    }, 1500)
-  }
+  const [state, formAction, pending] = useActionState<SignInState, FormData>(
+    signIn,
+    {},
+  )
 
   return (
     <div className="flex min-h-svh">
       {/* Left panel - Globe */}
       <div className="relative hidden w-1/2 flex-col justify-between bg-zinc-950 lg:flex">
-        {/* Logo */}
-        <Link href="/dashboard" className="relative z-20 flex items-center gap-2.5 p-8">
+        <div className="relative z-20 flex items-center gap-2.5 p-8">
           <div className="flex size-8 items-center justify-center rounded-lg bg-white text-black">
-            <LandmarkIcon className="size-4" />
+            <StarIcon className="size-4" />
           </div>
           <span className="text-sm font-semibold text-white">
-            Shadcn Fintech
+            Northern Star Support Services
           </span>
-        </Link>
+        </div>
 
         {/* Globe */}
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
           <GlobeDemo />
         </div>
 
-        {/* Quote overlay — pinned to bottom */}
+        {/* Pinned to bottom */}
         <div className="relative z-20 mt-auto p-8">
           <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-            <blockquote className="text-sm leading-relaxed text-white/80">
-              &ldquo;The best time to start investing was yesterday. The second
-              best time is now.&rdquo;
-            </blockquote>
+            <p className="text-sm leading-relaxed text-white/80">
+              Finance operations for Falaax Group Pty Ltd, trading as Northern
+              Star Support Services.
+            </p>
             <p className="mt-3 text-xs text-white/50">
-              &mdash; Financial Wisdom
+              Private system — staff access only.
             </p>
           </div>
         </div>
@@ -109,61 +101,22 @@ export default function SignInPage() {
             variants={itemVariants}
           >
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <LandmarkIcon className="size-5" />
+              <StarIcon className="size-5" />
             </div>
           </motion.div>
 
           {/* Heading */}
           <motion.div className="text-center" variants={itemVariants}>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Welcome back
+              Sign in
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Sign in to your account
+              Northern Star finance
             </p>
           </motion.div>
 
-          {/* Social buttons */}
-          <motion.div
-            className="mt-8 grid grid-cols-2 gap-3"
-            variants={itemVariants}
-          >
-            <Button variant="outline" size="lg" className="gap-2">
-              <Image
-                src="/logos/google-com.png"
-                alt="Google"
-                width={16}
-                height={16}
-                className="size-4"
-              />
-              <span className="text-sm">Google</span>
-            </Button>
-            <Button variant="outline" size="lg" className="gap-2">
-              <Image
-                src="/logos/apple-com.png"
-                alt="Apple"
-                width={16}
-                height={16}
-                className="size-4"
-              />
-              <span className="text-sm">Apple</span>
-            </Button>
-          </motion.div>
-
-          {/* Divider */}
-          <motion.div
-            className="relative my-6 flex items-center"
-            variants={itemVariants}
-          >
-            <div className="flex-1 border-t border-border" />
-            <span className="mx-3 text-xs text-muted-foreground">
-              or continue with
-            </span>
-            <div className="flex-1 border-t border-border" />
-          </motion.div>
-
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={formAction} className="mt-8 space-y-4">
             <motion.div variants={itemVariants}>
               <label
                 htmlFor="email"
@@ -177,32 +130,28 @@ export default function SignInPage() {
                 </InputGroupAddon>
                 <InputGroupInput
                   id="email"
+                  name="email"
                   type="email"
-                  placeholder="name@example.com"
+                  autoComplete="email"
+                  placeholder="name@northernstarsupport.com"
                   required
                 />
               </InputGroup>
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <div className="mb-1.5 flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </label>
-                <Link
-                  href="#"
-                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
+                Password
+              </label>
               <InputGroup>
                 <InputGroupAddon align="inline-start">
                   <LockIcon className="size-4 text-muted-foreground" />
                 </InputGroupAddon>
                 <InputGroupInput
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   placeholder="Enter your password"
                   required
                 />
@@ -210,6 +159,7 @@ export default function SignInPage() {
                   <InputGroupButton
                     size="icon-xs"
                     variant="ghost"
+                    type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
@@ -223,22 +173,27 @@ export default function SignInPage() {
               </InputGroup>
             </motion.div>
 
+            {state.error && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+              >
+                <AlertCircleIcon className="mt-0.5 size-4 shrink-0" />
+                <span>{state.error}</span>
+              </div>
+            )}
+
             <motion.div variants={itemVariants} className="pt-1">
               <Button
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={isLoading || isSuccess}
+                disabled={pending}
               >
-                {isLoading ? (
+                {pending ? (
                   <>
                     <Loader2Icon className="size-4 animate-spin" />
                     <span>Signing in...</span>
-                  </>
-                ) : isSuccess ? (
-                  <>
-                    <CheckIcon className="size-4" />
-                    <span>Success!</span>
                   </>
                 ) : (
                   <span>Sign in</span>
@@ -247,27 +202,27 @@ export default function SignInPage() {
             </motion.div>
           </form>
 
-          {/* Footer */}
+          {/* No self-registration: staff logins are created in the Supabase
+              dashboard and roles are set in the SQL editor. */}
           <motion.p
             className="mt-6 text-center text-sm text-muted-foreground"
             variants={itemVariants}
           >
-            Don&apos;t have an account?{" "}
+            Need an account?{" "}
             <Link
-              href="/sign-up"
+              href="mailto:Admin@NorthernStarSupport.com"
               className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
             >
-              Sign up
+              Ask an administrator
             </Link>
           </motion.p>
 
-          {/* Secured badge */}
           <motion.div
             className="mt-8 flex items-center justify-center gap-1.5 text-xs text-muted-foreground/60"
             variants={itemVariants}
           >
             <ShieldCheckIcon className="size-3.5" />
-            <span>256-bit SSL encrypted</span>
+            <span>Access is logged and role-restricted</span>
           </motion.div>
         </motion.div>
       </div>

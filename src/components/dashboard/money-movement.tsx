@@ -1,6 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon } from "lucide-react"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+
+import { formatAud, formatAudCompact, formatMonthKey } from "@/lib/format"
+import type { MonthTotals } from "@/lib/data/reporting"
 import {
   Card,
   CardContent,
@@ -20,138 +25,136 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { moneyMovementByPeriod } from "@/data/seed"
-import { ArrowDownLeftIcon, ArrowUpRightIcon } from "lucide-react"
+import { EmptyState } from "@/components/empty-state"
 
 const chartConfig = {
-  moneyIn: {
-    label: "Money In",
-    color: "var(--color-primary)",
-  },
-  moneyOut: {
-    label: "Money Out",
-    color: "var(--color-muted-foreground)",
-  },
+  moneyIn: { label: "Money in", color: "var(--color-chart-2)" },
+  moneyOut: { label: "Money out", color: "var(--color-chart-1)" },
 } satisfies ChartConfig
 
-type Period = keyof typeof moneyMovementByPeriod
+/**
+ * Money in against money out, over a selectable window.
+ *
+ * The template's 7d / 30d / 90d windows came from three hand-written seed
+ * arrays. The cash book is a monthly ledger — `transactions.month` is a month
+ * name, and entries land in monthly batches — so daily buckets would be mostly
+ * empty. The windows are months instead.
+ */
+const WINDOWS = [
+  { value: "3", label: "3 months" },
+  { value: "6", label: "6 months" },
+  { value: "12", label: "12 months" },
+] as const
 
-export function MoneyMovement() {
-  const [period, setPeriod] = useState<Period>("7d")
-  const data = moneyMovementByPeriod[period]
+export function MoneyMovement({ months }: { months: MonthTotals[] }) {
+  const [window, setWindow] = useState<string>("6")
 
-  const totals = useMemo(() => {
-    const inTotal = data.reduce((s, d) => s + d.moneyIn, 0)
-    const outTotal = data.reduce((s, d) => s + d.moneyOut, 0)
-    return { in: inTotal, out: outTotal, net: inTotal - outTotal }
-  }, [data])
+  const data = useMemo(
+    () =>
+      months.slice(-Number(window)).map((month) => ({
+        ...month,
+        label: formatMonthKey(month.month),
+      })),
+    [months, window],
+  )
+
+  const totals = useMemo(
+    () =>
+      data.reduce(
+        (acc, row) => ({
+          in: acc.in + row.moneyIn,
+          out: acc.out + row.moneyOut,
+        }),
+        { in: 0, out: 0 },
+      ),
+    [data],
+  )
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-base font-semibold">
-          Money Movement
+          Money movement
         </CardTitle>
-        <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-          <SelectTrigger className="h-8 w-[110px] text-xs">
+        <Select value={window} onValueChange={(v) => v && setWindow(v)}>
+          <SelectTrigger className="h-8 w-[120px] text-xs" aria-label="Window">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7d">7 days</SelectItem>
-            <SelectItem value="30d">30 days</SelectItem>
-            <SelectItem value="90d">90 days</SelectItem>
+            {WINDOWS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2.5 rounded-xl bg-emerald-50 px-3 py-2.5 dark:bg-emerald-950/30">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
-              <ArrowDownLeftIcon className="size-4 text-emerald-600 dark:text-emerald-400" />
+      <CardContent>
+        {data.length === 0 ? (
+          <EmptyState
+            variant="analytics"
+            title="No activity"
+            description="No cash book entries to chart."
+            className="py-8"
+          />
+        ) : (
+          <>
+            <div className="mb-3 flex flex-wrap gap-4 text-xs">
+              <span className="flex items-center gap-1.5">
+                <ArrowDownLeftIcon className="size-3.5 text-emerald-500" />
+                In
+                <span className="font-medium tabular-nums text-foreground">
+                  {formatAud(totals.in)}
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <ArrowUpRightIcon className="size-3.5 text-rose-500" />
+                Out
+                <span className="font-medium tabular-nums text-foreground">
+                  {formatAud(totals.out)}
+                </span>
+              </span>
             </div>
-            <div>
-              <p className="text-[10px] font-medium text-emerald-600/70 dark:text-emerald-400/70">Money In</p>
-              <p className="text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
-                ${totals.in.toLocaleString()}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5 rounded-xl bg-rose-50 px-3 py-2.5 dark:bg-rose-950/30">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/50">
-              <ArrowUpRightIcon className="size-4 text-rose-600 dark:text-rose-400" />
-            </div>
-            <div>
-              <p className="text-[10px] font-medium text-rose-600/70 dark:text-rose-400/70">Money Out</p>
-              <p className="text-sm font-bold tabular-nums text-rose-700 dark:text-rose-300">
-                ${totals.out.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        {/* Net flow */}
-        <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-          <span className="text-xs text-muted-foreground">Net Flow</span>
-          <span className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-            +${totals.net.toLocaleString()}
-          </span>
-        </div>
-
-        {/* Chart */}
-        <ChartContainer config={chartConfig} className="h-[180px] w-full">
-          <BarChart
-            data={data}
-            margin={{ top: 4, right: 4, bottom: 0, left: -24 }}
-            barGap={2}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke="var(--color-border)"
-              strokeOpacity={0.4}
-            />
-            <XAxis
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              fontSize={11}
-              tickMargin={6}
-              stroke="var(--color-muted-foreground)"
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              fontSize={11}
-              tickMargin={4}
-              stroke="var(--color-muted-foreground)"
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value) =>
-                    `$${Number(value).toLocaleString()}`
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <BarChart data={data} margin={{ top: 4, left: -12 }}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  tickMargin={8}
+                  tickFormatter={(value: string) => value.split(" ")[0]}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  width={60}
+                  tickFormatter={(value: number) => formatAudCompact(value)}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value) => formatAud(Number(value))}
+                    />
                   }
                 />
-              }
-            />
-            <Bar
-              dataKey="moneyIn"
-              fill="var(--color-primary)"
-              radius={[6, 6, 0, 0]}
-              maxBarSize={24}
-            />
-            <Bar
-              dataKey="moneyOut"
-              fill="var(--color-muted-foreground)"
-              fillOpacity={0.25}
-              radius={[6, 6, 0, 0]}
-              maxBarSize={24}
-            />
-          </BarChart>
-        </ChartContainer>
+                <Bar
+                  dataKey="moneyIn"
+                  fill="var(--color-moneyIn)"
+                  radius={[3, 3, 0, 0]}
+                />
+                <Bar
+                  dataKey="moneyOut"
+                  fill="var(--color-moneyOut)"
+                  radius={[3, 3, 0, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          </>
+        )}
       </CardContent>
     </Card>
   )

@@ -14,57 +14,53 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { navItemsFor, type PageSlug, type Role } from "@/lib/auth/roles"
 import {
   LayoutDashboardIcon,
-  WalletIcon,
-  ArrowLeftRightIcon,
+  BookOpenIcon,
+  UsersIcon,
+  UserIcon,
+  BanknoteIcon,
+  FileTextIcon,
+  ReceiptIcon,
+  BarChart3Icon,
+  CalculatorIcon,
   CreditCardIcon,
-  ChartAreaIcon,
-  TargetIcon,
   SettingsIcon,
-  LifeBuoyIcon,
-  LandmarkIcon,
-  SendIcon,
-  TrendingUpIcon,
-  BitcoinIcon,
-  BellIcon,
-  LogInIcon,
-  UserPlusIcon,
+  StarIcon,
 } from "lucide-react"
 
-const data = {
-  user: {
-    name: "Abderrahim G.",
-    email: "abderrahim@fintech.com",
-    avatar: "/avatars/user.jpg",
-  },
-  navDaily: [
-    { title: "Overview", url: "/dashboard", icon: <LayoutDashboardIcon /> },
-    { title: "Accounts", url: "/accounts", icon: <WalletIcon /> },
-    { title: "Transactions", url: "/transactions", icon: <ArrowLeftRightIcon /> },
-    { title: "Cards", url: "/cards", icon: <CreditCardIcon /> },
-  ],
-  navMoney: [
-    { title: "Transfers", url: "/transfers", icon: <SendIcon /> },
-    { title: "Investments", url: "/investments", icon: <TrendingUpIcon /> },
-    { title: "Crypto", url: "/crypto", icon: <BitcoinIcon /> },
-  ],
-  navInsights: [
-    { title: "Analytics", url: "/analytics", icon: <ChartAreaIcon /> },
-    { title: "Budgets", url: "/budgets", icon: <TargetIcon /> },
-  ],
-  navAuth: [
-    { title: "Sign In", url: "/sign-in", icon: <LogInIcon /> },
-    { title: "Sign Up", url: "/sign-up", icon: <UserPlusIcon /> },
-  ],
-  navSecondary: [
-    { title: "Notifications", url: "/notifications", icon: <BellIcon /> },
-    { title: "Settings", url: "/settings", icon: <SettingsIcon /> },
-    { title: "Help & Support", url: "/support", icon: <LifeBuoyIcon /> },
-  ],
+const icons: Record<PageSlug, React.ReactNode> = {
+  dashboard: <LayoutDashboardIcon />,
+  "cash-book": <BookOpenIcon />,
+  employees: <UsersIcon />,
+  participants: <UserIcon />,
+  payroll: <BanknoteIcon />,
+  invoices: <FileTextIcon />,
+  tax: <ReceiptIcon />,
+  reports: <BarChart3Icon />,
+  expenses: <CreditCardIcon />,
+  accountant: <CalculatorIcon />,
+  settings: <SettingsIcon />,
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  staff: {
+    name: string
+    email: string
+    role: Role
+  }
+}
+
+export function AppSidebar({ staff, ...props }: AppSidebarProps) {
+  // One flat group in the production sidebar's order, filtered by role —
+  // an accountant has no Employees or Participants item at all.
+  const items = navItemsFor(staff.role).map((item) => ({
+    title: item.title,
+    url: item.href,
+    icon: icons[item.slug],
+  }))
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -72,12 +68,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <LandmarkIcon className="size-4" />
+                <StarIcon className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">Shadcn Fintech</span>
+                <span className="truncate font-semibold">Northern Star</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  Finance Dashboard
+                  Support Services
                 </span>
               </div>
             </SidebarMenuButton>
@@ -85,14 +81,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navDaily} label="Daily" />
-        <NavMain items={data.navMoney} label="Money" />
-        <NavMain items={data.navInsights} label="Insights" />
-        <NavMain items={data.navAuth} label="Auth" />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={items} />
+        <NavSecondary className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser staff={staff} />
       </SidebarFooter>
     </Sidebar>
   )

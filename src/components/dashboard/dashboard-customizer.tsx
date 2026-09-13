@@ -19,31 +19,22 @@ import {
 import { Button } from "@/components/ui/button"
 import { GripVerticalIcon, LayoutGridIcon, LockIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { FinancialOverview } from "@/components/dashboard/financial-overview"
-import { AccountCards } from "@/components/dashboard/account-cards"
-import { QuickTransfer } from "@/components/dashboard/quick-transfer"
-import { SpendingLimit } from "@/components/dashboard/spending-limit"
-import { MoneyMovement } from "@/components/dashboard/money-movement"
-import { RecentTransactions } from "@/components/dashboard/recent-transactions"
-import { HealthScore } from "@/components/dashboard/health-score"
 
-type WidgetSize = "sm" | "lg" | "full"
+export type WidgetSize = "sm" | "lg" | "full"
 
-type Block = {
+/**
+ * One dashboard widget.
+ *
+ * `component` is built on the server and passed in, so the widgets can be
+ * server components that have already read their data — this client component
+ * only reorders them, it never fetches.
+ */
+export type Block = {
   id: string
   label: string
   size: WidgetSize
   component: React.ReactNode
 }
-
-const defaultBlocks: Block[] = [
-  { id: "financial-overview", label: "Financial Overview", size: "lg", component: <FinancialOverview /> },
-  { id: "account-cards", label: "Account Cards", size: "sm", component: <AccountCards /> },
-  { id: "transfer-spending", label: "Transfer & Spending", size: "sm", component: <div className="flex flex-col gap-4 [&>*]:flex-1"><QuickTransfer /><SpendingLimit /></div> },
-  { id: "money-movement", label: "Money Movement", size: "sm", component: <MoneyMovement /> },
-  { id: "health-score", label: "Financial Health", size: "sm", component: <HealthScore /> },
-  { id: "recent-transactions", label: "Recent Transactions", size: "full", component: <RecentTransactions /> },
-]
 
 const sizeClass: Record<WidgetSize, string> = {
   sm: "col-span-12 lg:col-span-4",
@@ -95,7 +86,11 @@ function SortableWidget({
   )
 }
 
-export function DashboardCustomizer() {
+export function DashboardCustomizer({
+  defaultBlocks,
+}: {
+  defaultBlocks: Block[]
+}) {
   const [editing, setEditing] = useState(false)
   const [blocks, setBlocks] = useState(() => {
     if (typeof window === "undefined") return defaultBlocks
@@ -111,7 +106,10 @@ export function DashboardCustomizer() {
         }
         return reordered
       }
-    } catch {}
+    } catch {
+      // A saved order that won't parse is a stale or hand-edited value, not a
+      // fault — fall through to the default layout.
+    }
     return defaultBlocks
   })
   const [activeId, setActiveId] = useState<string | null>(null)

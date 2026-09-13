@@ -7,13 +7,9 @@ import { Button } from "@/components/ui/button"
 type EmptyStateVariant =
   | "accounts"
   | "transactions"
-  | "cards"
   | "transfers"
-  | "investments"
-  | "crypto"
   | "analytics"
   | "budgets"
-  | "notifications"
   | "search"
   | "filter"
   | "generic"
@@ -115,60 +111,6 @@ function TransactionIllustration() {
   )
 }
 
-function CardIllustration() {
-  return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-      {/* Back card */}
-      <motion.rect
-        x="14" y="20" width="52" height="34" rx="6"
-        className="fill-muted stroke-border"
-        strokeWidth="1"
-        initial={{ rotate: -8, opacity: 0 }}
-        animate={{ rotate: -8, opacity: 0.6 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-        style={{ transformOrigin: "40px 37px" }}
-      />
-      {/* Front card */}
-      <motion.rect
-        x="14" y="24" width="52" height="34" rx="6"
-        className="fill-primary/10 stroke-primary/40"
-        strokeWidth="1.5"
-        initial={{ y: 34, opacity: 0 }}
-        animate={{ y: 24, opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      />
-      {/* Chip */}
-      <motion.rect
-        x="22" y="32" width="10" height="7" rx="1.5"
-        className="fill-amber-400/50 stroke-amber-500/60"
-        strokeWidth="0.5"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.8, type: "spring" }}
-      />
-      {/* Dots for card number */}
-      {[22, 27, 32, 40, 45, 50].map((x, i) => (
-        <motion.circle
-          key={x}
-          cx={x} cy="46" r="1.5"
-          className="fill-primary/25"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.9 + i * 0.05 }}
-        />
-      ))}
-      {/* Sparkle */}
-      <motion.path
-        d="M 58 18 L 60 14 L 62 18 L 66 20 L 62 22 L 60 26 L 58 22 L 54 20 Z"
-        className="fill-primary/20"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        style={{ transformOrigin: "60px 20px" }}
-      />
-    </svg>
-  )
-}
-
 function ChartIllustration() {
   return (
     <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
@@ -211,43 +153,6 @@ function ChartIllustration() {
         transition={{ delay: 1, duration: 0.8 }}
       />
       <motion.circle cx="59" cy="22" r="3" className="fill-primary/40" initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ delay: 1.6 }} />
-    </svg>
-  )
-}
-
-function BellIllustration() {
-  return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-      <motion.path
-        d="M 40 16 C 30 16 22 24 22 34 L 22 46 L 16 54 L 64 54 L 58 46 L 58 34 C 58 24 50 16 40 16 Z"
-        className="fill-muted/60 stroke-border"
-        strokeWidth="1.5"
-        animate={{ rotate: [0, 3, -3, 2, -2, 0] }}
-        transition={{ duration: 2, delay: 0.5, repeat: Infinity, repeatDelay: 3 }}
-        style={{ transformOrigin: "40px 16px" }}
-      />
-      <motion.path d="M 34 54 C 34 58 36 62 40 62 C 44 62 46 58 46 54" className="stroke-muted-foreground/30" strokeWidth="1.5" fill="none" />
-      {/* Notification dot */}
-      <motion.circle
-        cx="52" cy="24" r="6"
-        className="fill-primary/20 stroke-primary/50"
-        strokeWidth="1"
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      />
-      <motion.circle cx="52" cy="24" r="2" className="fill-primary" />
-      {/* Checkmark */}
-      <motion.path
-        d="M 35 38 L 39 42 L 47 34"
-        className="stroke-emerald-500/40"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
-      />
     </svg>
   )
 }
@@ -346,25 +251,10 @@ const variants: Record<EmptyStateVariant, {
     title: "No transactions yet",
     description: "Your transactions will appear here once you link an account or make your first transfer.",
   },
-  cards: {
-    illustration: <CardIllustration />,
-    title: "No cards added",
-    description: "Add a physical or virtual card to manage spending limits, freeze cards, and track payments.",
-  },
   transfers: {
     illustration: <TransactionIllustration />,
     title: "No transfers yet",
     description: "Send money to friends, family, or businesses. Your transfer history will show up here.",
-  },
-  investments: {
-    illustration: <ChartIllustration />,
-    title: "No investments",
-    description: "Start building your portfolio by connecting a brokerage account or making your first investment.",
-  },
-  crypto: {
-    illustration: <ChartIllustration />,
-    title: "No crypto assets",
-    description: "Buy, sell, or transfer cryptocurrency to get started. Real-time prices update every 3 seconds.",
   },
   analytics: {
     illustration: <ChartIllustration />,
@@ -375,11 +265,6 @@ const variants: Record<EmptyStateVariant, {
     illustration: <ChartIllustration />,
     title: "No budgets set",
     description: "Create your first budget to track spending by category and get alerts when you're close to limits.",
-  },
-  notifications: {
-    illustration: <BellIllustration />,
-    title: "All caught up!",
-    description: "You have no notifications right now. We'll let you know when something needs your attention.",
   },
   search: {
     illustration: <SearchIllustration />,

@@ -14,22 +14,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Private internal system — no social cards, and kept out of search indexes
+// the way the production app's robots.txt does it.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://shadcn-fintech.vercel.app"),
-  title: "Shadcn Fintech — Finance Dashboard Template",
-  description: "A premium open-source fintech dashboard built with Next.js, shadcn/ui, and Tailwind CSS. 13 pages, drag-and-drop layout, crypto candlestick charts, and more.",
-  openGraph: {
-    title: "Shadcn Fintech — Finance Dashboard Template",
-    description: "A premium open-source fintech dashboard built with Next.js, shadcn/ui, and Tailwind CSS.",
-    type: "website",
-    url: "https://shadcn-fintech.vercel.app",
-    images: [{ url: "/screenshots/shadcn-fintech.png", width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Shadcn Fintech — Finance Dashboard Template",
-    description: "A premium open-source fintech dashboard built with Next.js, shadcn/ui, and Tailwind CSS.",
-    images: ["/screenshots/shadcn-fintech.png"],
+  title: "Northern Star Finance",
+  description:
+    "Finance operations for Falaax Group Pty Ltd, trading as Northern Star Support Services.",
+  robots: {
+    index: false,
+    follow: false,
   },
 };
 

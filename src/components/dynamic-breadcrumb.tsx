@@ -13,18 +13,18 @@ import {
 
 const labelMap: Record<string, string> = {
   dashboard: "Dashboard",
-  accounts: "Accounts",
-  transactions: "Transactions",
-  transfers: "Transfers",
-  cards: "Cards",
-  crypto: "Crypto",
-  analytics: "Analytics",
-  investments: "Investments",
-  budgets: "Budgets",
+  "cash-book": "Cash Book",
+  employees: "Employees",
+  participants: "Participants",
+  payroll: "Payroll",
+  invoices: "Invoices",
+  tax: "Tax & BAS",
+  reports: "Reports",
+  expenses: "Expenses",
+  accountant: "Accountant",
   settings: "Settings",
-  notifications: "Notifications",
   "sign-in": "Sign In",
-  "sign-up": "Sign Up",
+  "no-access": "No Access",
 }
 
 export function DynamicBreadcrumb() {

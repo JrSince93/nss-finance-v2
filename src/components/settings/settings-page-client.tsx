@@ -23,18 +23,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   UserIcon,
   ShieldIcon,
   BellIcon,
   CreditCardIcon,
   PaletteIcon,
-  LoaderIcon,
   MonitorIcon,
   SunIcon,
   MoonIcon,
@@ -48,6 +43,14 @@ import {
 
 type TabId = "profile" | "security" | "notifications" | "billing" | "appearance"
 
+/** The signed-in user's staff row, flattened for the client boundary. */
+export type StaffProfile = {
+  name: string
+  email: string
+  roleLabel: string
+  hasEmployeeRecord: boolean
+}
+
 const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "profile", label: "Profile", icon: <UserIcon className="size-4" /> },
   { id: "security", label: "Security", icon: <ShieldIcon className="size-4" /> },
@@ -58,64 +61,80 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // ── Profile Tab ──────────────────────────────────────────────────────────────
 
-function ProfileTab() {
-  const [saving, setSaving] = React.useState(false)
-  const [name, setName] = React.useState("Abderrahim G.")
-  const [email, setEmail] = React.useState("abderrahim@fintech.com")
+/** Initials for the avatar fallback — there are no profile photos. */
+function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  )
+}
 
-  function handleSave() {
-    setSaving(true)
-    setTimeout(() => setSaving(false), 1200)
-  }
-
+/**
+ * The signed-in user's real profile, read from their `staff` row.
+ *
+ * Read-only, and says so. The `staff` table has no insert or update policy —
+ * deliberately, so nobody can change their own role from the app — and the name
+ * lives there, so an editable field with a Save button would fail every time.
+ * The template's editable inputs are replaced with the actual values.
+ */
+function ProfileTab({ staff }: { staff: StaffProfile }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
-        <CardDescription>Update your account profile details</CardDescription>
+        <CardTitle>Profile</CardTitle>
+        <CardDescription>
+          Your staff record. Managed in Supabase — contact an administrator to
+          change it.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center gap-4">
           <Avatar className="size-16">
-            <AvatarImage src="/avatars/user.jpg" alt="User avatar" />
-            <AvatarFallback className="text-lg">AG</AvatarFallback>
+            <AvatarFallback className="text-lg">
+              {initials(staff.name)}
+            </AvatarFallback>
           </Avatar>
-          <div>
-            <p className="font-medium">{name}</p>
-            <p className="text-sm text-muted-foreground">{email}</p>
+          <div className="min-w-0">
+            <p className="truncate font-medium">{staff.name}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              {staff.email}
+            </p>
+            <Badge variant="secondary" className="mt-1">
+              {staff.roleLabel}
+            </Badge>
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="name">
-              Full Name
-            </label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <dt className="text-sm font-medium">Full name</dt>
+            <dd className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              {staff.name}
+            </dd>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="email">
-              Email Address
-            </label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+          <div className="space-y-1">
+            <dt className="text-sm font-medium">Email address</dt>
+            <dd className="truncate rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              {staff.email}
+            </dd>
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving && <LoaderIcon className="size-4 animate-spin" />}
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+          <div className="space-y-1">
+            <dt className="text-sm font-medium">Role</dt>
+            <dd className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              {staff.roleLabel}
+            </dd>
+          </div>
+          <div className="space-y-1">
+            <dt className="text-sm font-medium">Linked employee record</dt>
+            <dd className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              {staff.hasEmployeeRecord ? "Linked" : "Not linked"}
+            </dd>
+          </div>
+        </dl>
       </CardContent>
     </Card>
   )
@@ -484,7 +503,7 @@ function AppearanceTab() {
 
 // ── Main Settings Page ───────────────────────────────────────────────────────
 
-export function SettingsPageClient() {
+export function SettingsPageClient({ staff }: { staff: StaffProfile }) {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab")
   const [activeTab, setActiveTab] = React.useState<TabId>(
@@ -492,7 +511,7 @@ export function SettingsPageClient() {
   )
 
   const tabContent: Record<TabId, React.ReactNode> = {
-    profile: <ProfileTab />,
+    profile: <ProfileTab staff={staff} />,
     security: <SecurityTab />,
     notifications: <NotificationsTab />,
     billing: <BillingTab />,

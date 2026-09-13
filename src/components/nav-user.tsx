@@ -1,11 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,15 +17,28 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, LogOutIcon } from "lucide-react"
+import { ChevronsUpDownIcon, LogOutIcon, SettingsIcon } from "lucide-react"
+import Link from "next/link"
+
+import { signOut } from "@/lib/auth/actions"
+import { ROLE_LABELS, type Role } from "@/lib/auth/roles"
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+}
 
 export function NavUser({
-  user,
+  staff,
 }: {
-  user: {
+  staff: {
     name: string
     email: string
-    avatar: string
+    role: Role
   }
 }) {
   const { isMobile } = useSidebar()
@@ -44,12 +53,13 @@ export function NavUser({
             }
           >
             <Avatar>
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>AG</AvatarFallback>
+              <AvatarFallback>{initials(staff.name)}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{user.name}</span>
-              <span className="truncate text-xs">{user.email}</span>
+              <span className="truncate font-medium">{staff.name}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {ROLE_LABELS[staff.role]}
+              </span>
             </div>
             <ChevronsUpDownIcon className="ml-auto size-4" />
           </DropdownMenuTrigger>
@@ -63,43 +73,36 @@ export function NavUser({
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar>
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>AG</AvatarFallback>
+                    <AvatarFallback>{initials(staff.name)}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.name}</span>
-                    <span className="truncate text-xs">{user.email}</span>
+                    <span className="truncate font-medium">{staff.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {staff.email}
+                    </span>
                   </div>
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <SparklesIcon
-                />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            <div className="px-2 py-1.5">
+              {/* Role is set in the Supabase SQL editor — read-only here. */}
+              <Badge variant="secondary">{ROLE_LABELS[staff.role]}</Badge>
+            </div>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem render={<Link href="/settings" />}>
-                <BadgeCheckIcon
-                />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/settings?tab=billing" />}>
-                <CreditCardIcon
-                />
-                Billing
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/sign-in" />}>
-              <LogOutIcon
-              />
-              Log out
+            <DropdownMenuItem render={<Link href="/settings" />}>
+              <SettingsIcon />
+              Settings
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <form action={signOut}>
+              <DropdownMenuItem
+                render={<button type="submit" className="w-full" />}
+              >
+                <LogOutIcon />
+                Sign out
+              </DropdownMenuItem>
+            </form>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

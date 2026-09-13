@@ -8,15 +8,23 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { requireStaff } from "@/lib/auth/dal"
+import { navItemsFor } from "@/lib/auth/roles"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // The real gate. `proxy.ts` only does an optimistic cookie check; this is
+  // what resolves the session against the Auth server and the `staff` row.
+  const staff = await requireStaff()
+
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar
+        staff={{ name: staff.name, email: staff.email, role: staff.role }}
+      />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
@@ -34,7 +42,7 @@ export default function DashboardLayout({
             <ThemeToggle />
           </div>
         </header>
-        <CommandPalette />
+        <CommandPalette pages={navItemsFor(staff.role)} />
         <main className="flex flex-1 flex-col">{children}</main>
       </SidebarInset>
     </SidebarProvider>
