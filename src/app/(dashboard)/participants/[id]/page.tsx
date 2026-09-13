@@ -8,6 +8,7 @@ import { requireStaff } from "@/lib/auth/dal"
 import { ParticipantForm } from "@/components/participants/participant-form"
 import { BudgetLinesPanel } from "@/components/participants/budget-lines-panel"
 import { ArchiveButton } from "@/components/participants/archive-button"
+import { SetBreadcrumbTitle } from "@/components/breadcrumb-title"
 import { Badge } from "@/components/ui/badge"
 
 /** Roles that may reach this page at all. Mirrors the Server Action's check. */
@@ -56,6 +57,9 @@ export default async function Page({
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      {/* Names the breadcrumb, which otherwise only sees the id in the URL. */}
+      <SetBreadcrumbTitle title={participantName(participant)} />
+
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <Link

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { ChevronLeftIcon } from "lucide-react"
 
 import { EmployeeForm } from "@/components/employees/employee-form"
+import { SetBreadcrumbTitle } from "@/components/breadcrumb-title"
 import { getEmployeeForEdit } from "@/lib/data/queries"
 import { requireStaff } from "@/lib/auth/dal"
 
@@ -30,8 +31,13 @@ export default async function Page({
 
   if (!employee) notFound()
 
+  const employeeTitle = employee.name || "Unnamed employee"
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      {/* Names the breadcrumb, which otherwise only sees the id in the URL. */}
+      <SetBreadcrumbTitle title={employeeTitle} />
+
       <div className="flex flex-col gap-1">
         <Link
           href="/employees"
@@ -41,7 +47,7 @@ export default async function Page({
           All employees
         </Link>
         <h1 className="text-xl font-semibold tracking-tight">
-          {employee.name || "Unnamed employee"}
+          {employeeTitle}
         </h1>
       </div>
 
