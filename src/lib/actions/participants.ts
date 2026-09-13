@@ -1,10 +1,15 @@
 "use server"
 
 import { refresh } from "next/cache"
+import { redirect } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/server"
 import { getStaff } from "@/lib/auth/dal"
 import { writeOne, type WriteResult } from "@/lib/data/write"
+import {
+  parseParticipantForm,
+  type ParticipantFieldErrors,
+} from "@/lib/data/participants"
 import type { ParticipantRow } from "@/lib/data/types"
 
 /**
@@ -98,4 +103,58 @@ export async function restoreParticipant(id: string): Promise<ArchiveResult> {
 
   refresh()
   return { ok: true, name: result.row.name ?? undefined }
+}
+
+export type SaveParticipantState = {
+  status: "idle" | "error"
+  message?: string
+  errors?: ParticipantFieldErrors
+}
+
+/**
+ * Save the participant detail form.
+ *
+ * Only the fields in `ParticipantFormValues` are sent. `budget_lines` and
+ * `ndis_plan` are not in the payload, so an update here cannot overwrite a
+ * participant's plan structure with a partial view of it.
+ */
+export async function saveParticipant(
+  _previous: SaveParticipantState,
+  formData: FormData,
+): Promise<SaveParticipantState> {
+  const id = String(formData.get("id") ?? "")
+  if (!id) return { status: "error", message: "No participant was specified." }
+
+  const auth = await authorise()
+  if (!auth.ok) return { status: "error", message: auth.error }
+
+  const parsed = parseParticipantForm(formData)
+  if (!parsed.ok) {
+    return {
+      status: "error",
+      message: "Check the highlighted fields.",
+      errors: parsed.errors,
+    }
+  }
+
+  const supabase = await createClient()
+
+  const result = await writeOne<{ id: string; name: string | null }>(
+    "saveParticipant",
+    supabase
+      .from("participants")
+      .update(parsed.values)
+      .eq("id", id)
+      .select("id, name"),
+    NOT_FOUND,
+  )
+
+  if (!result.ok) return { status: "error", message: result.error }
+
+  const params = new URLSearchParams({ saved: result.row.name ?? "Participant" })
+  if (parsed.cleanedFields.length) {
+    params.set("cleaned", parsed.cleanedFields.join(", "))
+  }
+
+  redirect(`/participants?${params}`)
 }

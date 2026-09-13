@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { CalendarIcon, ClockIcon, IdCardIcon } from "lucide-react"
 import { motion } from "motion/react"
 
@@ -48,7 +49,16 @@ export function ParticipantCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{name}</p>
+          {canWrite ? (
+            <Link
+              href={`/participants/${participant.id}`}
+              className="truncate text-sm font-semibold hover:underline"
+            >
+              {name}
+            </Link>
+          ) : (
+            <p className="truncate text-sm font-semibold">{name}</p>
+          )}
           <p className="mt-0.5 flex items-center gap-1 font-mono text-xs text-muted-foreground">
             <IdCardIcon className="size-3 shrink-0" />
             {participant.ndis_number || "No NDIS number"}

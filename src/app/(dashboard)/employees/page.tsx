@@ -2,6 +2,7 @@ import { BriefcaseIcon, UserCheckIcon, UsersIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { EmployeeTable } from "@/components/employees/employee-table"
+import { SaveNotice } from "@/components/save-notice"
 import { getEmployees } from "@/lib/data/queries"
 import { requireStaff } from "@/lib/auth/dal"
 
@@ -19,9 +20,13 @@ import { requireStaff } from "@/lib/auth/dal"
 /** Roles that may edit. Mirrors the check in the Server Action. */
 const CAN_WRITE: string[] = ["admin", "office_manager"]
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string | string[]; cleaned?: string | string[] }>
+}) {
   const staff = await requireStaff("employees")
-  const employees = await getEmployees()
+  const [employees, params] = await Promise.all([getEmployees(), searchParams])
 
   const active = employees.filter((e) => e.active !== false).length
   const casual = employees.filter(
@@ -54,6 +59,8 @@ export default async function Page() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <SaveNotice saved={params.saved} cleaned={params.cleaned} />
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {stats.map((stat) => (
           <div

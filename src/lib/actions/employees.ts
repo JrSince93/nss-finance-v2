@@ -1,6 +1,6 @@
 "use server"
 
-import { refresh } from "next/cache"
+import { redirect } from "next/navigation"
 
 import { createClient } from "@/lib/supabase/server"
 import { getStaff } from "@/lib/auth/dal"
@@ -95,11 +95,17 @@ export async function saveEmployee(
     return { status: "error", message: result.error }
   }
 
-  refresh()
-
-  return {
-    status: "saved",
-    message: `Saved ${result.row.name ?? "employee"}.`,
-    cleaned: parsed.cleanedFields.length ? parsed.cleanedFields : undefined,
+  // Back to the list on success. The outcome travels in the query string
+  // because the redirect discards this action's return value — and the
+  // "characters were cleaned" notice in particular must survive, since
+  // invisible characters are by definition undetectable if nobody says so.
+  //
+  // `redirect` throws, so nothing after it runs, and it re-renders the target
+  // route on the way — no separate `refresh()` needed.
+  const params = new URLSearchParams({ saved: result.row.name ?? "Employee" })
+  if (parsed.cleanedFields.length) {
+    params.set("cleaned", parsed.cleanedFields.join(", "))
   }
+
+  redirect(`/employees?${params}`)
 }

@@ -2,12 +2,7 @@
 
 import { useActionState, useState } from "react"
 import Link from "next/link"
-import {
-  AlertCircleIcon,
-  CheckCircle2Icon,
-  InfoIcon,
-  LoaderIcon,
-} from "lucide-react"
+import { AlertCircleIcon, InfoIcon, LoaderIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { saveEmployee, type SaveEmployeeState } from "@/lib/actions/employees"
@@ -61,22 +56,11 @@ export function EmployeeForm({ employee }: { employee: EmployeeEditRow }) {
         </p>
       )}
 
-      {state.status === "saved" && (
-        <div className="flex flex-col gap-1 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600 dark:text-emerald-400">
-          <p className="flex items-center gap-2">
-            <CheckCircle2Icon className="size-4 shrink-0" />
-            {state.message}
-          </p>
-          {state.cleaned && (
-            // Say so rather than rewriting their input silently — invisible
-            // characters are invisible, so the change would be undetectable.
-            <p className="pl-6 text-xs">
-              Removed hidden formatting characters from:{" "}
-              {state.cleaned.join(", ")}.
-            </p>
-          )}
-        </div>
-      )}
+      {/*
+        There is no success branch here: a successful save redirects to the
+        list, and the confirmation (including which fields had hidden
+        characters stripped) is rendered there from the query string.
+      */}
 
       <Card>
         <CardHeader>

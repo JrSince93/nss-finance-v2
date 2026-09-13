@@ -151,6 +151,33 @@ export const getParticipants = cache(async (): Promise<ParticipantRow[]> => {
   )
 })
 
+/**
+ * One participant by id, or null if it doesn't exist or RLS hides it.
+ *
+ * The two cases are indistinguishable from here, deliberately — see
+ * `getEmployeeForEdit`.
+ */
+export const getParticipantById = cache(
+  async (id: string): Promise<ParticipantRow | null> => {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from("participants")
+      .select(
+        "id, name, ndis_number, dob, phone, address, weekly_hours, notes, active, archived_at, assigned_workers, budget_lines",
+      )
+      .eq("id", id)
+      .maybeSingle()
+
+    if (error) {
+      console.error("[nss] participant lookup failed:", error.message)
+      return null
+    }
+
+    return (data as ParticipantRow | null) ?? null
+  },
+)
+
 /** Invoice ledger, newest invoice first. */
 export const getInvoices = cache(async (): Promise<InvoiceRow[]> => {
   const supabase = await createClient()
