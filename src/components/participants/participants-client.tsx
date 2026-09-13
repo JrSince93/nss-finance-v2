@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react"
 
 import { cn } from "@/lib/utils"
-import { budgetLinesOf, budgetLineTypeLabel } from "@/lib/data/budget-lines"
+import {
+  activeBudgetLines,
+  budgetLineTypeLabel,
+} from "@/lib/data/budget-lines"
 import { partitionByArchived } from "@/lib/data/participants"
 import type { ParticipantRow } from "@/lib/data/types"
 import { EmptyState } from "@/components/empty-state"
@@ -49,8 +52,8 @@ export function ParticipantsClient({
     // solely on an archived participant shouldn't add a filter tab that
     // matches nothing.
     for (const participant of active) {
-      for (const line of budgetLinesOf(participant)) {
-        const key = (line.type ?? "").toLowerCase()
+      for (const line of activeBudgetLines(participant)) {
+        const key = (line.rate_card ?? "").toLowerCase()
         if (key) found.set(key, budgetLineTypeLabel(line))
       }
     }
@@ -64,8 +67,8 @@ export function ParticipantsClient({
   const filtered = useMemo(() => {
     if (selectedType === "all") return active
     return active.filter((participant) =>
-      budgetLinesOf(participant).some(
-        (line) => (line.type ?? "").toLowerCase() === selectedType,
+      activeBudgetLines(participant).some(
+        (line) => (line.rate_card ?? "").toLowerCase() === selectedType,
       ),
     )
   }, [active, selectedType])

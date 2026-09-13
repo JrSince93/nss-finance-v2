@@ -8,7 +8,8 @@ import { formatAud, formatDate } from "@/lib/format"
 import {
   budgetLineFunding,
   budgetLineLabel,
-  budgetLinesOf,
+  budgetLineManagementLabel,
+  activeBudgetLines,
   planWindow,
   totalFunding,
 } from "@/lib/data/budget-lines"
@@ -35,7 +36,7 @@ export function ParticipantCard({
   /** Whether this role may archive. Server-checked too — this only hides UI. */
   canWrite: boolean
 }) {
-  const lines = budgetLinesOf(participant)
+  const lines = activeBudgetLines(participant)
   const plan = planWindow(participant)
   const funding = totalFunding(participant)
   const name = participantName(participant)
@@ -88,9 +89,9 @@ export function ParticipantCard({
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 <span className="truncate">{budgetLineLabel(line)}</span>
-                {line.management && (
+                {budgetLineManagementLabel(line) && (
                   <Badge variant="secondary" className="shrink-0 text-[10px]">
-                    {line.management}
+                    {budgetLineManagementLabel(line)}
                   </Badge>
                 )}
               </span>

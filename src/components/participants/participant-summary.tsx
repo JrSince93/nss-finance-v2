@@ -2,7 +2,7 @@ import { LayersIcon, UsersIcon, WalletIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { formatAud } from "@/lib/format"
-import { budgetLinesOf, totalFunding } from "@/lib/data/budget-lines"
+import { activeBudgetLines, totalFunding } from "@/lib/data/budget-lines"
 import type { ParticipantRow } from "@/lib/data/types"
 
 /**
@@ -22,7 +22,7 @@ export function ParticipantSummary({
     0,
   )
   const lineCount = participants.reduce(
-    (sum, participant) => sum + budgetLinesOf(participant).length,
+    (sum, participant) => sum + activeBudgetLines(participant).length,
     0,
   )
 

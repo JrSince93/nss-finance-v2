@@ -87,15 +87,54 @@ export type PayRunRow = {
   wise_status: string | null
 }
 
-/** One NDIS budget line on a participant's plan. */
+/**
+ * One NDIS budget line on a participant's plan.
+ *
+ * Field names taken from `collectBudgetLines()` in the production app, which is
+ * what writes this JSONB — not guessed. The earlier version of this type used
+ * `label`/`type`/`funding`/`start`/`end`, none of which exist, so every budget
+ * line rendered as "Budget line — $0.00".
+ *
+ * Everything is optional because there is no schema behind JSONB: rows written
+ * by `migrateLegacyPlan` carry a different subset from rows written by the
+ * budget-line editor, and older rows predate several fields entirely.
+ */
 export type BudgetLine = {
   id?: string
-  label?: string
-  type?: string
+  /** The operator's name for the line, e.g. "CORE-CP/ASC". */
+  name?: string
+  /** `agency` | `plan` | `self`. */
   management?: string
-  funding?: number | string
-  start?: string
-  end?: string
+  /** Which rate table prices this line: core, core_combined, sil, employment, community, custom. */
+  rate_card?: string
+  /** Total funding for the line. Authoritative even when `funding_schedule` is set. */
+  funding_amount?: number | string | null
+  plan_start?: string
+  plan_end?: string
+  /** Absent means active; only an explicit `false` deactivates. */
+  active?: boolean
+  /**
+   * Irregular monthly funding periods, for lines not funded in even quarters
+   * (Lita's SIL line runs a 17th-to-16th cycle). A breakdown of
+   * `funding_amount`, not a replacement for it — the production app warns when
+   * these rows don't sum to it.
+   */
+  funding_schedule?: { start?: string; end?: string; amount?: number }[]
+  bill_to?: { name?: string; email?: string }
+  travel?: {
+    enabled?: boolean
+    km?: number
+    labour_min?: number
+    km_rate?: number
+    days?: number[]
+  }
+  rates?: {
+    code?: string
+    desc?: string
+    day_type?: string
+    rate?: number
+    group?: string
+  }[]
 }
 
 export type ParticipantRow = {
