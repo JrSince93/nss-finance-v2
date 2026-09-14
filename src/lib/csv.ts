@@ -25,13 +25,22 @@ export function csvAmount(value: number | string | null | undefined): string {
   return (Number.isFinite(n) ? (n as number) : 0).toFixed(2)
 }
 
-/** Trigger a download of `content` as `filename`. Browser only. */
-export function downloadCsv(content: string, filename: string): void {
-  // A BOM so Excel reads the file as UTF-8; without it, names with accents or
-  // the $ sign in some locales come through mangled.
-  const blob = new Blob(["﻿", content], {
-    type: "text/csv;charset=utf-8",
-  })
+/**
+ * Trigger a download of `content` as `filename`. Browser only.
+ *
+ * Prepends a UTF-8 byte order mark by default, so Excel reads accented names
+ * correctly. Pass `{ bom: false }` for anything a machine imports: a bank's
+ * bulk-payment importer can read the mark as part of the first header, turning
+ * `name` into an unrecognised column. The production app's payment files have
+ * never carried one.
+ */
+export function downloadCsv(
+  content: string,
+  filename: string,
+  options: { bom?: boolean } = {},
+): void {
+  const parts = options.bom === false ? [content] : ["﻿", content]
+  const blob = new Blob(parts, { type: "text/csv;charset=utf-8" })
   const url = URL.createObjectURL(blob)
   const link = document.createElement("a")
   link.href = url

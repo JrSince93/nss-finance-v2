@@ -53,6 +53,21 @@ export type EmployeeRow = {
 }
 
 /**
+ * What a bank payment file needs from an employee, and nothing more.
+ *
+ * Read through `getEmployeesForPaymentFile` only. No tax file number and no
+ * ABN: no payment file uses them.
+ */
+export type EmployeeBankRow = {
+  id: string
+  name: string | null
+  employment_type: string | null
+  pay_rate: number | null
+  bank_bsb: string | null
+  bank_account: string | null
+}
+
+/**
  * One employee with the sensitive columns included, for the edit form only.
  *
  * `EmployeeRow` deliberately omits these three so they don't travel with every

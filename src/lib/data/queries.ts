@@ -5,6 +5,7 @@ import { cache } from "react"
 import { createClient } from "@/lib/supabase/server"
 import type {
   DropdownOptionRow,
+  EmployeeBankRow,
   EmployeeEditRow,
   EmployeeRow,
   InvoiceRow,
@@ -109,6 +110,37 @@ export const getEmployees = cache(async (): Promise<EmployeeRow[]> => {
       .order("name", { ascending: true }),
   )
 })
+
+/**
+ * Bank details for the payment-file exporters, and nothing more.
+ *
+ * The one place `bank_account` is read for more than a single employee. Kept
+ * separate from `getEmployees` so account numbers never travel with an
+ * ordinary list render; the only caller is the payment-file Server Action,
+ * when someone has asked for a file.
+ *
+ * Deliberately does not select `tax_file_number` or `abn`. No payment file
+ * uses either, and reading sensitive columns a feature doesn't need is exactly
+ * what a narrow query is for preventing. `getEmployeeForEdit` stays the only
+ * reader of those two.
+ *
+ * RLS applies as everywhere: an office manager gets no rows for the two
+ * payroll-restricted employees, and the accountant gets none at all. A payment
+ * file built from the office manager's rows would therefore quietly leave two
+ * people unpaid, which is why its only caller is admin-only.
+ */
+export const getEmployeesForPaymentFile = cache(
+  async (): Promise<EmployeeBankRow[]> => {
+    const supabase = await createClient()
+    return selectAll<EmployeeBankRow>(
+      "employees (payment file)",
+      supabase
+        .from("employees")
+        .select("id, name, employment_type, pay_rate, bank_bsb, bank_account")
+        .order("name", { ascending: true }),
+    )
+  },
+)
 
 /**
  * Pay runs, most recent period first.
