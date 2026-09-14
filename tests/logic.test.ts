@@ -12,6 +12,7 @@ import {
   fyLabel,
   periodFor,
   currentPeriod,
+  currentFy,
   quarterOfDate,
   isInPeriod,
   monthsInPeriod,
@@ -33,6 +34,7 @@ import {
   gstEstimate,
 } from "@/lib/data/reporting"
 import { parseIsoDate, monthKeyOf } from "@/lib/format"
+import { melbourneToday } from "@/lib/pay-periods"
 
 const tx = (over: Partial<TransactionRow>): TransactionRow => ({
   id: "x",
@@ -106,10 +108,39 @@ test("quarterOfDate maps calendar months to FY quarters", () => {
   assert.equal(quarterOfDate(new Date(2026, 9, 15)), 2) // Oct
 })
 
-test("currentPeriod contains today", () => {
+test("currentPeriod uses Melbourne's date, not the host's", () => {
+  // The server runs in UTC. Pinned instants keep this independent of the
+  // timezone of whichever machine runs the suite.
+
+  // 30 Jun 23:30 in Melbourne (AEST, UTC+10): still the old quarter and FY.
+  assert.equal(currentPeriod(new Date("2026-06-30T13:30:00Z")).label, "Q4 FY2025-26")
+  // 1 Jul 01:30 in Melbourne, still 30 Jun in UTC. Reading the host's local
+  // date put this in Q4 FY2025-26 on the server.
+  assert.equal(currentPeriod(new Date("2026-06-30T15:30:00Z")).label, "Q1 FY2026-27")
+  // 1 Jan 00:30 in Melbourne during summer time (AEDT, UTC+11).
+  assert.equal(currentPeriod(new Date("2025-12-31T13:30:00Z")).label, "Q3 FY2025-26")
+
+  // Unpinned, the default contains today's Melbourne date.
   const period = currentPeriod()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = melbourneToday()
   assert.ok(isInPeriod(today, period), `${today} not in ${period.label}`)
+})
+
+test("currentFy uses Melbourne's date, not the host's", () => {
+  // Only the 1 July rollover can move the FY; the other quarter boundaries
+  // fall mid-year. Pinned instants keep this independent of the host timezone.
+
+  // 30 Jun 23:30 in Melbourne (AEST, UTC+10): still FY2025-26.
+  assert.equal(currentFy(new Date("2026-06-30T13:30:00Z")), 2025)
+  // 1 Jul 01:30 in Melbourne, still 30 Jun in UTC. `fyOfDate(new Date())` on
+  // the UTC server returned 2025 here.
+  assert.equal(currentFy(new Date("2026-06-30T15:30:00Z")), 2026)
+  // 1 Jul 09:59:59 in Melbourne: the last second UTC is still in June, so the
+  // far edge of the window a host-local `getMonth() >= 6` got wrong.
+  assert.equal(currentFy(new Date("2026-06-30T23:59:59Z")), 2026)
+  // 1 Jan 00:30 in Melbourne during summer time (AEDT, UTC+11): the calendar
+  // year ticks over but the FY must not.
+  assert.equal(currentFy(new Date("2025-12-31T13:30:00Z")), 2025)
 })
 
 test("isInPeriod is inclusive at both ends and false for null", () => {

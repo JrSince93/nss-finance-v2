@@ -13,6 +13,8 @@
  * Pure and client-safe — the period picker is a client component.
  */
 
+import { melbourneToday } from "@/lib/pay-periods"
+
 /** Quarters 1-4, or 0 for the whole financial year. */
 export type Quarter = 0 | 1 | 2 | 3 | 4
 
@@ -83,14 +85,38 @@ export function periodFor(fy: number, quarter: Quarter): Period {
   }
 }
 
+/** FY quarter by calendar month index: Jan-Mar Q3, Jul-Sep Q1, and so on. */
+const QUARTER_BY_MONTH = [3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2] as const
+
 /** The FY quarter a calendar month falls in: Jan-Mar Q3, Jul-Sep Q1, and so on. */
 export function quarterOfDate(date: Date): Quarter {
-  return ([3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2] as const)[date.getMonth()]
+  return QUARTER_BY_MONTH[date.getMonth()]
 }
 
-/** The period containing today — the default when nothing is selected. */
+/**
+ * The period containing today in Melbourne — the default when nothing is
+ * selected.
+ *
+ * Deliberately not the host's local date. The server runs in UTC, ten or eleven
+ * hours behind Melbourne, so for the first hours of 1 Jan, 1 Apr, 1 Jul and
+ * 1 Oct its own month is still the previous quarter's — and on 1 July, the
+ * previous financial year.
+ */
 export function currentPeriod(now: Date = new Date()): Period {
-  return periodFor(fyOfDate(now), quarterOfDate(now))
+  const today = melbourneToday(now)
+  const [year, month] = today.split("-").map(Number)
+  return periodFor(month >= 7 ? year : year - 1, QUARTER_BY_MONTH[month - 1])
+}
+
+/**
+ * The financial year containing today in Melbourne.
+ *
+ * Use this rather than `fyOfDate(new Date())`, which reads the host's local
+ * date: on the UTC server that is still 30 June until 10am on 1 July in
+ * Melbourne, so it names the previous financial year.
+ */
+export function currentFy(now: Date = new Date()): number {
+  return currentPeriod(now).fy
 }
 
 /** Inclusive ISO range test. Safe on null and on empty strings. */

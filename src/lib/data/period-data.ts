@@ -1,6 +1,6 @@
 import "server-only"
 
-import { fyOfDate, fyOfIso, isInPeriod, type Period } from "@/lib/fy"
+import { currentFy, fyOfIso, isInPeriod, type Period } from "@/lib/fy"
 import {
   getInvoices,
   getPayRuns,
@@ -79,7 +79,7 @@ function availableFys(
   payRuns: PayRunRow[],
   invoices: InvoiceRow[],
 ): number[] {
-  const years = new Set<number>([fyOfDate(new Date())])
+  const years = new Set<number>([currentFy()])
 
   const add = (iso: string | null) => {
     const fy = fyOfIso(iso)
