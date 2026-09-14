@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react"
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
+  ChevronDownIcon,
   DownloadIcon,
   LoaderIcon,
 } from "lucide-react"
@@ -25,13 +26,12 @@ import {
 } from "@/lib/pay-periods"
 import { ExportCsvButton } from "@/components/export-csv-button"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 /** How many fortnights the period picker offers, counting back from today's. */
 const PERIOD_CHOICES = 13
@@ -57,6 +57,12 @@ type Outcome =
  * this page at all. Each button calls a Server Action that reads bank details
  * under the caller's RLS and returns the finished file, which goes straight to
  * a download rather than into component state.
+ *
+ * Collapsed by default. The pay-run list is what people open Payroll for, and
+ * exports are occasional, so the card stays one line until it's wanted — a line
+ * that names what's inside, so it can still be found the first time. Closing it
+ * loses nothing: the chosen period and the last result live in this component,
+ * not in the panel, which unmounts when closed.
  */
 export function PayrollExports({
   today,
@@ -110,92 +116,120 @@ export function PayrollExports({
     })
   }
 
+  // Only promise bank files to a role that will actually see the buttons.
+  const description = canExportPayments
+    ? "Payroll summary, and bank payment files for Revolut, Wise or a generic CSV."
+    : "Payroll summary as a spreadsheet."
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Exports</CardTitle>
-        <CardDescription>
-          Download pay runs as a spreadsheet, or as a file to upload to the
-          bank.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Payroll summary</p>
-            <p className="text-xs text-muted-foreground">
-              Every pay run — hours, gross, PAYG, super and net. No bank
-              details.
-            </p>
-          </div>
-          <ExportCsvButton
-            header={summary.header}
-            rows={summary.rows}
-            filename={summary.filename}
+    <Collapsible defaultOpen={false}>
+      {/*
+        `gap-0 py-0`: the space under the header lives inside the animated
+        panel instead. With the Card's own gap, 16px would stay open for the
+        whole closing animation and then snap shut when the panel unmounts.
+      */}
+      <Card className="gap-0 py-0">
+        {/*
+          The trigger renders its own native <button>; there is deliberately no
+          `render` prop. Base UI's Collapsible.Trigger asserts `nativeButton`,
+          and swapping in another element is what logged console errors on the
+          Dashboard before. Spans rather than CardTitle/CardDescription, which
+          are divs: a <button> may only contain phrasing content. The ring is
+          inset because the Card clips its overflow.
+        */}
+        <CollapsibleTrigger className="group/exports flex w-full items-center justify-between gap-3 px-4 py-4 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50">
+          <span className="flex min-w-0 flex-col gap-1">
+            <span className="font-heading text-base leading-snug font-medium">
+              Exports
+            </span>
+            <span className="text-sm text-muted-foreground">{description}</span>
+          </span>
+          <ChevronDownIcon
+            aria-hidden
+            className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[panel-open]/exports:rotate-180 motion-reduce:transition-none"
           />
-        </div>
+        </CollapsibleTrigger>
 
-        {canExportPayments && (
-          <div className="flex flex-col gap-3 border-t pt-4">
-            <div>
-              <p className="text-sm font-medium">Bank payment file</p>
-              <p className="text-xs text-muted-foreground">
-                One payment per pay run in the fortnight: net pay to the
-                employee&apos;s account. The file contains bank account numbers
-                — don&apos;t forward it.
-              </p>
+        <CollapsibleContent className="h-[var(--collapsible-panel-height)] overflow-hidden transition-[height] duration-200 ease-out data-[ending-style]:h-0 data-[starting-style]:h-0 motion-reduce:transition-none">
+          <CardContent className="flex flex-col gap-4 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Payroll summary</p>
+                <p className="text-xs text-muted-foreground">
+                  Every pay run — hours, gross, PAYG, super and net. No bank
+                  details.
+                </p>
+              </div>
+              <ExportCsvButton
+                header={summary.header}
+                rows={summary.rows}
+                filename={summary.filename}
+              />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor="pay-period" className="text-sm">
-                Pay period
-              </label>
-              <select
-                id="pay-period"
-                value={periodIndex}
-                disabled={pending}
-                onChange={(e) => {
-                  setPeriodIndex(Number(e.target.value))
-                  // A result describes the period it was run for; don't leave
-                  // it showing against a different one.
-                  setOutcome(null)
-                }}
-                className="h-8 rounded-lg border border-border bg-background px-2 text-sm"
-              >
-                {periods.map((period) => (
-                  <option key={period.index} value={period.index}>
-                    {formatDate(period.start)} – {formatDate(period.end)}
-                    {period.index === currentIndex ? " (current)" : ""}
-                    {period.index === lastCompletedIndex
-                      ? " (last completed)"
-                      : ""}
-                  </option>
-                ))}
-              </select>
+            {canExportPayments && (
+              <div className="flex flex-col gap-3 border-t pt-4">
+                <div>
+                  <p className="text-sm font-medium">Bank payment file</p>
+                  <p className="text-xs text-muted-foreground">
+                    One payment per pay run in the fortnight: net pay to the
+                    employee&apos;s account. The file contains bank account
+                    numbers — don&apos;t forward it.
+                  </p>
+                </div>
 
-              {PAYMENT_PLATFORMS.map((platform) => (
-                <Button
-                  key={platform}
-                  variant="outline"
-                  size="sm"
-                  disabled={pending}
-                  onClick={() => exportPaymentFile(platform)}
-                >
-                  {busy === platform ? (
-                    <LoaderIcon className="size-3.5 animate-spin" />
-                  ) : (
-                    <DownloadIcon className="size-3.5" />
-                  )}
-                  {PAYMENT_PLATFORM_LABELS[platform]}
-                </Button>
-              ))}
-            </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label htmlFor="pay-period" className="text-sm">
+                    Pay period
+                  </label>
+                  <select
+                    id="pay-period"
+                    value={periodIndex}
+                    disabled={pending}
+                    onChange={(e) => {
+                      setPeriodIndex(Number(e.target.value))
+                      // A result describes the period it was run for; don't
+                      // leave it showing against a different one.
+                      setOutcome(null)
+                    }}
+                    className="h-8 rounded-lg border border-border bg-background px-2 text-sm"
+                  >
+                    {periods.map((period) => (
+                      <option key={period.index} value={period.index}>
+                        {formatDate(period.start)} – {formatDate(period.end)}
+                        {period.index === currentIndex ? " (current)" : ""}
+                        {period.index === lastCompletedIndex
+                          ? " (last completed)"
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
 
-            {outcome && <OutcomeNotice outcome={outcome} />}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                  {PAYMENT_PLATFORMS.map((platform) => (
+                    <Button
+                      key={platform}
+                      variant="outline"
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => exportPaymentFile(platform)}
+                    >
+                      {busy === platform ? (
+                        <LoaderIcon className="size-3.5 animate-spin" />
+                      ) : (
+                        <DownloadIcon className="size-3.5" />
+                      )}
+                      {PAYMENT_PLATFORM_LABELS[platform]}
+                    </Button>
+                  ))}
+                </div>
+
+                {outcome && <OutcomeNotice outcome={outcome} />}
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   )
 }
 
