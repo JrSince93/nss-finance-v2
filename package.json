@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsx --tsconfig tests/tsconfig.json --test --test-reporter=tap tests/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
@@ -43,6 +44,7 @@
     "eslint-config-next": "16.2.3",
     "shadcn": "^4.2.0",
     "tailwindcss": "^4",
+    "tsx": "4.23.13",
     "typescript": "^5"
   }
 }
